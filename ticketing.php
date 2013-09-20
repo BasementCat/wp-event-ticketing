@@ -2259,7 +2259,7 @@ echo '</div>';
 					{
 						echo '<td>' . $packageRemaining . ' left</td>';
 					}
-					echo '<td><input type="checkbox" name="packagePurchase[' . $v->packageId . ']" value="1" /></td>';
+					echo '<td><input type="radio" name="packagePurchase" value="' . $v->packageId . '" /></td>';
 					echo '</tr>';
 				}
 			}
@@ -2396,9 +2396,10 @@ echo '</div>';
             }
 				
 			$somethingpurchased = $total = 0;
-			foreach ($_REQUEST["packagePurchase"] as $packageId => $quantity)
+			if (isset($_REQUEST["packagePurchase"]) && $_REQUEST["packagePurchase"])
 			{
-				if ($quantity > 0)
+				$packageId = $_REQUEST["packagePurchase"];
+				if (isset($o["packageProtos"][$packageId]))
 				{
 					$somethingpurchased = 1;
 					$total += $o["packageProtos"][$packageId]->price * $quantity;
@@ -2415,7 +2416,7 @@ echo '</div>';
 			//was something purchased?
 			if ($somethingpurchased == 0)
 			{
-				$_SESSION["ticketingError"] = 'You did not choose a quantity on any of the tickets. Please choose how many tickets you want';
+				$_SESSION["ticketingError"] = 'You did not choose a package.  Please choose a package.';
 			}
 			else
 			{
