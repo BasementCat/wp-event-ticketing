@@ -2259,12 +2259,7 @@ echo '</div>';
 					{
 						echo '<td>' . $packageRemaining . ' left</td>';
 					}
-					echo '<td><select name="packagePurchase[' . $v->packageId . ']">';
-					for ($i = 0; $i <= $packageCounter; $i++)
-					{
-						echo '<option>' . $i . '</option>';
-					}
-					echo '</select></td>';
+					echo '<td><input type="checkbox" name="packagePurchase[' . $v->packageId . ']" value="1" /></td>';
 					echo '</tr>';
 				}
 			}
