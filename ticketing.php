@@ -2259,7 +2259,7 @@ echo '</div>';
 					{
 						echo '<td>' . $packageRemaining . ' left</td>';
 					}
-					echo '<td><input type="radio" name="packagePurchase" value="' . $v->packageId . '" /></td>';
+					echo '<td><button name="packagePurchase[' . $v->packageId . ']" value="1">Purchase</button></td>';
 					echo '</tr>';
 				}
 			}
