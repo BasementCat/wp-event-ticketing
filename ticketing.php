@@ -2420,7 +2420,7 @@ echo '</div>';
 			//was something purchased?
 			if ($somethingpurchased == 0)
 			{
-				$_SESSION["ticketingError"] = 'You did not choose a quantity on any of the tickets. Please choose how many tickets you want';
+				$_SESSION["ticketingError"] = 'You did not choose a package. Please choose a package.';
 			}
 			else
 			{
