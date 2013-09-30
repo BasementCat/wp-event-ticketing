@@ -2323,7 +2323,7 @@ EOT;
 			$errors = array();
 			if (defined('WP_DEBUG') && WP_DEBUG)
 			{
-				var_dump($this->getAttendees());
+				var_dump(self::getAttendees());
 			}
 			if ($package instanceof package)
 			{
