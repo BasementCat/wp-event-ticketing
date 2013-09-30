@@ -1462,7 +1462,7 @@ echo '</div>';
 						&nbsp;|&nbsp;
 						<a href="#" onclick="javascript:if (confirm('Are you sure you want to delete this option?')) {document.ticketOptionAdd.update.value='';document.ticketOptionAdd.edit.value='';document.ticketOptionAdd.del.value='{$v->optionId}';document.ticketOptionAdd.submit();return false;}">Delete</a>
 					</td>
-EOT
+EOT;
 			}
 
 			echo "</tr>";
@@ -1526,7 +1526,7 @@ EOT
 			<input type="checkbox" name="ticketOptionFuzzyUnique" value="1" {$isFuzzyUnique} />
 				Fuzzy Unique (Ignore case and nonword characters)<br />
 		</div>
-EOT
+EOT;
 		if (isset($_REQUEST["edit"]) && is_numeric($_REQUEST["edit"]) && is_numeric($ticketOption->optionId))
 		{
 			echo '<div>
