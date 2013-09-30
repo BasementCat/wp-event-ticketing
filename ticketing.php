@@ -2322,13 +2322,17 @@ EOT;
 				$ticket = $package->tickets[$ticketHash];
 				foreach ($_REQUEST["ticketOption"] as $oid => $oval)
 				{
+					if (defined('WP_DEBUG') && WP_DEBUG)
+					{
+						echo "Processing ticket option {$ticket->ticketOptions[$oid]->displayName} : '{$oval}'<br />\n";
+					}
 					if ($ticket->ticketOptions[$oid]->required && !trim($oval))
 					{
 						$errors[] = "Option '{$ticket->ticketOptions[$oid]->displayName}' is required.";
 					}
 					elseif ($ticket->ticketOptions[$oid]->unique)
 					{
-						$testValue = $ticket->ticketOptions[$oid]->value;
+						$testValue = $oval;
 						if ($ticket->ticketOptions[$oid]->fuzzyUnique)
 						{
 							$testValue = strtolower(preg_replace('#\W#', '', $testValue));
@@ -2342,7 +2346,10 @@ EOT;
 							{
 								$_value = strtolower(preg_replace('#\W#', '', $_value));
 							}
-							echo "Processing {$ticket->ticketOptions[$oid]}, comparing old {$_value} to new {$testValue}<br />\n";
+							if (defined('WP_DEBUG') && WP_DEBUG)
+							{
+								echo "Processing {$ticket->ticketOptions[$oid]}, comparing old {$_value} to new {$testValue}<br />\n";
+							}
 							if ($_value == $testValue)
 							{
 								$errors[] = "'{$ticket->ticketOptions[$oid]->displayName}' must be unique - please choose a different value.";
