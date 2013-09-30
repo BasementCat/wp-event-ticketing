@@ -2325,6 +2325,7 @@ EOT;
 					if (defined('WP_DEBUG') && WP_DEBUG)
 					{
 						echo "Processing ticket option {$ticket->ticketOptions[$oid]->displayName} : '{$oval}'<br />\n";
+						var_dump($ticket->ticketOptions[$oid]);
 					}
 					if ($ticket->ticketOptions[$oid]->required && !trim($oval))
 					{
