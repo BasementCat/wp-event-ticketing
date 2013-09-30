@@ -2342,10 +2342,7 @@ EOT;
 							{
 								$_value = strtolower(preg_replace('#\W#', '', $_value));
 							}
-							if (defined('WP_DEBUG') && WP_DEBUG)
-							{
-								echo "Processing {$ticket->ticketOptions[$oid]}, comparing old {$_value} to new {$testValue}<br />\n";
-							}
+							echo "Processing {$ticket->ticketOptions[$oid]}, comparing old {$_value} to new {$testValue}<br />\n";
 							if ($_value == $testValue)
 							{
 								$errors[] = "'{$ticket->ticketOptions[$oid]->displayName}' must be unique - please choose a different value.";
