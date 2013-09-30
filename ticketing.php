@@ -1423,7 +1423,8 @@ echo '</div>';
 					$_REQUEST["ticketOptionDisplayType"], //type
 					$_REQUEST["ticketOptionDrop"], //options
 					isset($_REQUEST["ticketOptionsRequired"]) ? (bool) $_REQUEST["ticketOptionRequired"] : true, //required
-					isset($_REQUEST["ticketOptionsUnique"]) ? (bool) $_REQUEST["ticketOptionUnique"] : false //unique
+					isset($_REQUEST["ticketOptionsUnique"]) ? (bool) $_REQUEST["ticketOptionUnique"] : false, //unique
+					isset($_REQUEST["ticketOptionsFuzzyUnique"]) ? (bool) $_REQUEST["ticketOptionFuzzyUnique"] : false //fuzzy unique
 				);
 				$o["ticketOptions"][$nextId]->setOptionId($nextId);
 				update_option("eventTicketingSystem", $o);
@@ -1515,12 +1516,15 @@ EOT
 		</div></div>';
 		$isRequired = $ticketOption->required ? 'checked="checked"' : '';
 		$isUnique = $ticketOption->unique ? 'checked="checked"' : '';
+		$isFuzzyUnique = $ticketOption->fuzzyUnique ? 'checked="checked"' : '';
 		echo <<<EOT
 		<div id="inputTicketOption_Opts">
 			<input type="checkbox" name="ticketOptionRequired" value="1" {$isRequired} />
 				Required<br />
 			<input type="checkbox" name="ticketOptionUnique" value="1" {$isUnique} />
 				Unique<br />
+			<input type="checkbox" name="ticketOptionFuzzyUnique" value="1" {$isFuzzyUnique} />
+				Fuzzy Unique (Ignore case and nonword characters)<br />
 		</div>
 EOT
 		if (isset($_REQUEST["edit"]) && is_numeric($_REQUEST["edit"]) && is_numeric($ticketOption->optionId))
@@ -2328,9 +2332,19 @@ EOT
 						foreach ($package->tickets as $_hash => $_ticket)
 						{
 							if ($_hash == $ticketHash) continue;
-							$usedOptions[] = $_ticket->ticketOptions[$oid]->value;
+							$_value = $_ticket->ticketOptions[$oid]->value;
+							if ($ticket->ticketOptions[$oid]->fuzzyUnique)
+							{
+								$_value = strtolower(preg_replace('#\W#', '', $_value));
+							}
+							$usedOptions[] = $_value;
 						}
-						if (in_array($ticket->ticketOptions[$oid]->value, $usedOptions))
+						$testValue = $ticket->ticketOptions[$oid]->value;
+						if ($ticket->ticketOptions[$oid]->fuzzyUnique)
+						{
+							$testValue = strtolower(preg_replace('#\W#', '', $testValue));
+						}
+						if (in_array($testValue, $usedOptions))
 						{
 							$errors[] = "'{$ticket->ticketOptions[$oid]->displayName}' must be unique - please choose a different value.";
 						}
@@ -2614,16 +2628,18 @@ class ticketOption
 	public $options;
 	public $required;
 	public $unique;
+	public $fuzzyUnique;
 	public $value;
 	public $optionId;
 
-	function __construct($display = NULL, $displayType = NULL, $options = NULL, $required = true, $unique = false)
+	function __construct($display = NULL, $displayType = NULL, $options = NULL, $required = true, $unique = false, $fuzzyUnique = false)
 	{
 		$this->displayName = $display;
 		$this->displayType = $displayType;
 		$this->options = $options;
 		$this->required = $required;
 		$this->unique = $unique;
+		$this->fuzzyUnique = $fuzzyUnique;
 	}
 
 	public function displayForm()
