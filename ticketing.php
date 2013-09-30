@@ -2434,7 +2434,6 @@ echo '</div>';
 			if ($somethingpurchased == 0)
 			{
 				$_SESSION["ticketingError"] = 'You did not choose a package. Please choose a package.';
-				$_SESSION["ticketingError"] = print_r($_REQUEST, true);
 			}
 			else
 			{
