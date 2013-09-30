@@ -2253,18 +2253,19 @@ echo '</div>';
 				if ($packageCounter > 0 && $v->validDates() && $v->active !== false)
 				{
 					echo '<tr>';
-					echo '<td><div class="packagename"><strong>' . $v->packageName . '</strong></div><div class="packagedescription">' . $v->packageDescription . '</div></td>';
+					echo '<td><div class="packagename"><label for="packagePurchase_' . $v->packageId . '">' . $v->packageName . '</label></div><div class="packagedescription">' . $v->packageDescription . '</div></td>';
 					echo '<td>'. (is_numeric($v->price) ? eventTicketingSystem::currencyFormat($v->price) : eventTicketingSystem::currencyFormat(0)) . '</td>';
 					if ($o["displayPackageQuantity"])
 					{
 						echo '<td>' . $packageRemaining . ' left</td>';
 					}
-					echo '<td><select name="packagePurchase[' . $v->packageId . ']">';
-					for ($i = 0; $i <= $packageCounter; $i++)
-					{
-						echo '<option>' . $i . '</option>';
-					}
-					echo '</select></td>';
+					// echo '<td><select name="packagePurchase[' . $v->packageId . ']">';
+					// for ($i = 0; $i <= $packageCounter; $i++)
+					// {
+					// 	echo '<option>' . $i . '</option>';
+					// }
+					// echo '</select></td>';
+					echo '<td><input type="radio" name="packagePurchase" id="packagePurchase_' . $v->packageId . '" value="' . $v->packageId . '" /></td>';
 					echo '</tr>';
 				}
 			}
@@ -2401,19 +2402,31 @@ echo '</div>';
             }
 				
 			$somethingpurchased = $total = 0;
-			foreach ($_REQUEST["packagePurchase"] as $packageId => $quantity)
+			// foreach ($_REQUEST["packagePurchase"] as $packageId => $quantity)
+			// {
+			// 	if ($quantity > 0)
+			// 	{
+			// 		$somethingpurchased = 1;
+			// 		$total += $o["packageProtos"][$packageId]->price * $quantity;
+			// 		$item[] = array("quantity" => $quantity,
+			// 		                "name" => $o["packageProtos"][$packageId]->displayName(),
+			// 		                "desc" => $o["packageProtos"][$packageId]->packageDescription,
+			// 		                "price" => $o["packageProtos"][$packageId]->price,
+			// 		                "packageid" => $packageId
+			// 		);
+			// 	}
+			// }
+			if (isset($_REQUEST["packagePurchase"]) && $_REQUEST["packagePurchase"])
 			{
-				if ($quantity > 0)
-				{
-					$somethingpurchased = 1;
-					$total += $o["packageProtos"][$packageId]->price * $quantity;
-					$item[] = array("quantity" => $quantity,
-					                "name" => $o["packageProtos"][$packageId]->displayName(),
-					                "desc" => $o["packageProtos"][$packageId]->packageDescription,
-					                "price" => $o["packageProtos"][$packageId]->price,
-					                "packageid" => $packageId
-					);
-				}
+				$packageId = $_REQUEST["packagePurchase"];
+				$somethingpurchased = 1;
+				$total += $o["packageProtos"][$packageId]->price * $quantity;
+				$item[] = array("quantity" => 1,
+				                "name" => $o["packageProtos"][$packageId]->displayName(),
+				                "desc" => $o["packageProtos"][$packageId]->packageDescription,
+				                "price" => $o["packageProtos"][$packageId]->price,
+				                "packageid" => $packageId
+				);
 			}
             
 
