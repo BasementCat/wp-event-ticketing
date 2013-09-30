@@ -2420,8 +2420,9 @@ echo '</div>';
 			{
 				$packageId = substr($_REQUEST["packagePurchase"], 1);
 				$somethingpurchased = 1;
+				$quantity = 1;
 				$total += $o["packageProtos"][$packageId]->price * $quantity;
-				$item[] = array("quantity" => 1,
+				$item[] = array("quantity" => $quantity,
 				                "name" => $o["packageProtos"][$packageId]->displayName(),
 				                "desc" => $o["packageProtos"][$packageId]->packageDescription,
 				                "price" => $o["packageProtos"][$packageId]->price,
