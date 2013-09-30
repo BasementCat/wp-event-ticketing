@@ -2321,6 +2321,10 @@ EOT;
 			$packageHash = $_REQUEST["packagehash"];
 			$package = get_option('package_' . $packageHash);
 			$errors = array();
+			if (defined('WP_DEBUG') && WP_DEBUG)
+			{
+				var_dump($this->getAttendees());
+			}
 			if ($package instanceof package)
 			{
 				$ticket = $package->tickets[$ticketHash];
