@@ -2265,7 +2265,7 @@ echo '</div>';
 					// 	echo '<option>' . $i . '</option>';
 					// }
 					// echo '</select></td>';
-					echo '<td><input type="radio" name="packagePurchase" id="packagePurchase_' . $v->packageId . '" value="' . $v->packageId . '" /></td>';
+					echo '<td><input type="radio" name="packagePurchase" id="packagePurchase_' . $v->packageId . '" value="p' . $v->packageId . '" /></td>';
 					echo '</tr>';
 				}
 			}
@@ -2418,7 +2418,7 @@ echo '</div>';
 			// }
 			if (isset($_REQUEST["packagePurchase"]) && $_REQUEST["packagePurchase"])
 			{
-				$packageId = $_REQUEST["packagePurchase"];
+				$packageId = substr($_REQUEST["packagePurchase"], 1);
 				$somethingpurchased = 1;
 				$total += $o["packageProtos"][$packageId]->price * $quantity;
 				$item[] = array("quantity" => 1,
