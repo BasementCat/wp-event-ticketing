@@ -1422,9 +1422,9 @@ echo '</div>';
 					$_REQUEST["ticketOptionDisplay"], //name
 					$_REQUEST["ticketOptionDisplayType"], //type
 					$_REQUEST["ticketOptionDrop"], //options
-					isset($_REQUEST["ticketOptionsRequired"]) ? (bool) $_REQUEST["ticketOptionRequired"] : true, //required
-					isset($_REQUEST["ticketOptionsUnique"]) ? (bool) $_REQUEST["ticketOptionUnique"] : false, //unique
-					isset($_REQUEST["ticketOptionsFuzzyUnique"]) ? (bool) $_REQUEST["ticketOptionFuzzyUnique"] : false //fuzzy unique
+					$_REQUEST["ticketOptionRequired"] ? true : false, //required
+					$_REQUEST["ticketOptionUnique"] ? true : false, //unique
+					$_REQUEST["ticketOptionFuzzyUnique"] ? true : false //fuzzy unique
 				);
 				$o["ticketOptions"][$nextId]->setOptionId($nextId);
 				update_option("eventTicketingSystem", $o);
