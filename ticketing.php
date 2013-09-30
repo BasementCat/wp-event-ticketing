@@ -1387,6 +1387,10 @@ echo '</div>';
 	{
 		//echo "<pre>";print_r($_REQUEST); echo "</pre>";
 		$o = get_option("eventTicketingSystem");
+		if (defined('WP_DEBUG') && WP_DEBUG)
+		{
+			var_dump($o['ticketOptions']);
+		}
 		if (isset($_POST['ticketOptionAddNonce']) && wp_verify_nonce($_POST['ticketOptionAddNonce'], plugin_basename(__FILE__)))
 		{
 			$_REQUEST = array_map('stripslashes_deep', $_REQUEST);
