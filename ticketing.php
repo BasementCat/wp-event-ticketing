@@ -2328,7 +2328,12 @@ EOT;
 					}
 					elseif ($ticket->ticketOptions[$oid]->unique)
 					{
-						$usedOptions = array();
+						$testValue = $ticket->ticketOptions[$oid]->value;
+						if ($ticket->ticketOptions[$oid]->fuzzyUnique)
+						{
+							$testValue = strtolower(preg_replace('#\W#', '', $testValue));
+						}
+
 						foreach ($package->tickets as $_hash => $_ticket)
 						{
 							if ($_hash == $ticketHash) continue;
@@ -2337,16 +2342,15 @@ EOT;
 							{
 								$_value = strtolower(preg_replace('#\W#', '', $_value));
 							}
-							$usedOptions[] = $_value;
-						}
-						$testValue = $ticket->ticketOptions[$oid]->value;
-						if ($ticket->ticketOptions[$oid]->fuzzyUnique)
-						{
-							$testValue = strtolower(preg_replace('#\W#', '', $testValue));
-						}
-						if (in_array($testValue, $usedOptions))
-						{
-							$errors[] = "'{$ticket->ticketOptions[$oid]->displayName}' must be unique - please choose a different value.";
+							if (defined('WP_DEBUG') && WP_DEBUG)
+							{
+								echo "Processing {$ticket->ticketOptions[$oid]}, comparing old {$_value} to new {$testValue}<br />\n";
+							}
+							if ($_value == $testValue)
+							{
+								$errors[] = "'{$ticket->ticketOptions[$oid]->displayName}' must be unique - please choose a different value.";
+								break;
+							}
 						}
 					}
 					if (count($errors) == 0)
