@@ -1418,7 +1418,13 @@ echo '</div>';
 					$_REQUEST["ticketOptionDrop"] = NULL;
 				}
 				
-				$o["ticketOptions"][$nextId] = new ticketOption($_REQUEST["ticketOptionDisplay"], $_REQUEST["ticketOptionDisplayType"], $_REQUEST["ticketOptionDrop"]);
+				$o["ticketOptions"][$nextId] = new ticketOption(
+					$_REQUEST["ticketOptionDisplay"], //name
+					$_REQUEST["ticketOptionDisplayType"], //type
+					$_REQUEST["ticketOptionDrop"], //options
+					isset($_REQUEST["ticketOptionsRequired"]) ? (bool) $_REQUEST["ticketOptionRequired"] : true, //required
+					isset($_REQUEST["ticketOptionsUnique"]) ? (bool) $_REQUEST["ticketOptionUnique"] : false //unique
+				);
 				$o["ticketOptions"][$nextId]->setOptionId($nextId);
 				update_option("eventTicketingSystem", $o);
 				echo '<div id="message" class="updated"><p>Option saved</p></div>';
@@ -1449,7 +1455,13 @@ echo '</div>';
 			{
 				echo "<tr>";
 				echo '<td>' . $v->displayName . '</td>';
-				echo '<td><a href="#" onclick="javascript:document.ticketOptionAdd.update.value=\'\';document.ticketOptionAdd.del.value=\'\';document.ticketOptionAdd.edit.value=\'' . $v->optionId . '\';document.ticketOptionAdd.submit();return false;">Edit</a>&nbsp;|&nbsp;<a href="#" onclick="javascript:if (confirm(\'Are you sure you want to delete this option?\')) {document.ticketOptionAdd.update.value=\'\';document.ticketOptionAdd.edit.value=\'\';document.ticketOptionAdd.del.value=\'' . $v->optionId . '\';document.ticketOptionAdd.submit();return false;}">Delete</a></td>';
+				echo <<<EOT
+					<td>
+						<a href="#" onclick="javascript:document.ticketOptionAdd.update.value='';document.ticketOptionAdd.del.value='';document.ticketOptionAdd.edit.value='{$v->optionId}';document.ticketOptionAdd.submit();return false;">Edit</a>
+						&nbsp;|&nbsp;
+						<a href="#" onclick="javascript:if (confirm('Are you sure you want to delete this option?')) {document.ticketOptionAdd.update.value='';document.ticketOptionAdd.edit.value='';document.ticketOptionAdd.del.value='{$v->optionId}';document.ticketOptionAdd.submit();return false;}">Delete</a>
+					</td>
+EOT
 			}
 
 			echo "</tr>";
@@ -1501,6 +1513,16 @@ echo '</div>';
 			<p class="submit"><input type="button" id="btnAdd" value="add another option value" />
 			<input type="button" id="btnDel" value="remove last option value" /></p>
 		</div></div>';
+		$isRequired = $ticketOption->required ? 'checked="checked"' : '';
+		$isUnique = $ticketOption->unique ? 'checked="checked"' : '';
+		echo <<<EOT
+		<div id="inputTicketOption_Opts">
+			<input type="checkbox" name="ticketOptionRequired" value="1" {$isRequired} />
+				Required<br />
+			<input type="checkbox" name="ticketOptionUnique" value="1" {$isUnique} />
+				Unique<br />
+		</div>
+EOT
 		if (isset($_REQUEST["edit"]) && is_numeric($_REQUEST["edit"]) && is_numeric($ticketOption->optionId))
 		{
 			echo '<div>
@@ -2290,17 +2312,51 @@ echo '</div>';
 			$ticketHash = $_REQUEST["tickethash"];
 			$packageHash = $_REQUEST["packagehash"];
 			$package = get_option('package_' . $packageHash);
+			$errors = array();
 			if ($package instanceof package)
 			{
+				$ticket = $package->tickets[$ticketHash];
 				foreach ($_REQUEST["ticketOption"] as $oid => $oval)
 				{
-					$package->tickets[$ticketHash]->ticketOptions[$oid]->value = $oval;
+					if ($ticket->ticketOptions[$oid]->required && !trim($oval))
+					{
+						$errors[] = "Option '{$ticket->ticketOptions[$oid]->displayName}' is required.";
+					}
+					elseif ($ticket->ticketOptions[$oid]->unique)
+					{
+						$usedOptions = array();
+						foreach ($package->tickets as $_hash => $_ticket)
+						{
+							if ($_hash == $ticketHash) continue;
+							$usedOptions[] = $_ticket->ticketOptions[$oid]->value;
+						}
+						if (in_array($ticket->ticketOptions[$oid]->value, $usedOptions))
+						{
+							$errors[] = "'{$ticket->ticketOptions[$oid]->displayName}' must be unique - please choose a different value.";
+						}
+					}
+					if (count($errors) == 0)
+					{
+						$package->tickets[$ticketHash]->ticketOptions[$oid]->value = $oval;
+					}
 				}
+			}
+			else
+			{
+				$errors[] = "Internal error.";
+			}
+
+			if (count($errors) == 0)
+			{
 				//echo '<pre>'.print_r($package->tickets,true).'</pre>';
 				$package->tickets[$ticketHash]->final = true;
 				update_option('package_' . $packageHash, $package);
 
 				echo '<div id="message" class="updated">Your registration has been saved</div>';
+			}
+			else
+			{
+				echo '<div id="error" class="updated">' . implode("<br />", $errors) . '</div>';
 			}
 		}
 		else
@@ -2557,15 +2613,17 @@ class ticketOption
 	public $displayType;
 	public $options;
 	public $required;
+	public $unique;
 	public $value;
 	public $optionId;
 
-	function __construct($display = NULL, $displayType = NULL, $options = NULL, $required = true)
+	function __construct($display = NULL, $displayType = NULL, $options = NULL, $required = true, $unique = false)
 	{
 		$this->displayName = $display;
 		$this->displayType = $displayType;
 		$this->options = $options;
 		$this->required = $required;
+		$this->unique = $unique;
 	}
 
 	public function displayForm()
