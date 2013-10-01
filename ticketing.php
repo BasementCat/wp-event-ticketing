@@ -1432,6 +1432,32 @@ echo '</div>';
 				);
 				$o["ticketOptions"][$nextId]->setOptionId($nextId);
 				update_option("eventTicketingSystem", $o);
+
+				//now update all packages that use this option
+				if (is_numeric($_REQUEST['update']))
+				{
+					global $wpdb;
+	        		$packages = $wpdb->get_results("select option_value from {$wpdb->options} where option_name like 'package_%'");
+	        		foreach ($packages as $packagehash => $package)
+	        		{
+		        		$package = unserialize($package);
+	        			foreach ($package->tickets as $tickethash => $ticket)
+	        			{
+		        			if (isset($ticket->ticketOptions[$nextId]))
+		        			{
+								$ticket->ticketOptions[$nextId]->displayName	= $o['ticketOptions'][$nextId]->displayName;
+								$ticket->ticketOptions[$nextId]->displayType	= $o['ticketOptions'][$nextId]->displayType;
+								$ticket->ticketOptions[$nextId]->options		= $o['ticketOptions'][$nextId]->options;
+								$ticket->ticketOptions[$nextId]->required		= $o['ticketOptions'][$nextId]->required;
+								$ticket->ticketOptions[$nextId]->unique		= $o['ticketOptions'][$nextId]->unique;
+								$ticket->ticketOptions[$nextId]->fuzzyUnique	= $o['ticketOptions'][$nextId]->fuzzyUnique;
+		        			}
+		        			$ticket->final = false;
+		        		}
+		        		update_option($packagehash, $package);
+		        	}
+		        }
+
 				echo '<div id="message" class="updated"><p>Option saved</p></div>';
 
 				$ticketOption = new ticketOption();
