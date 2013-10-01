@@ -1456,7 +1456,7 @@ echo '</div>';
 		        			}
 		        			$ticket->final = false;
 		        		}
-		        		update_option($packagehash, $package);
+		        		update_option('package_' . $packagehash, $package);
 		        	}
 		        }
 
