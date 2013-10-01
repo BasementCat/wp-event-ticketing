@@ -1387,6 +1387,10 @@ echo '</div>';
 	{
 		//echo "<pre>";print_r($_REQUEST); echo "</pre>";
 		$o = get_option("eventTicketingSystem");
+		if (defined('WP_DEBUG') && WP_DEBUG)
+		{
+			var_dump($o['ticketOptions']);
+		}
 		if (isset($_POST['ticketOptionAddNonce']) && wp_verify_nonce($_POST['ticketOptionAddNonce'], plugin_basename(__FILE__)))
 		{
 			$_REQUEST = array_map('stripslashes_deep', $_REQUEST);
@@ -1418,9 +1422,44 @@ echo '</div>';
 					$_REQUEST["ticketOptionDrop"] = NULL;
 				}
 				
-				$o["ticketOptions"][$nextId] = new ticketOption($_REQUEST["ticketOptionDisplay"], $_REQUEST["ticketOptionDisplayType"], $_REQUEST["ticketOptionDrop"]);
+				$o["ticketOptions"][$nextId] = new ticketOption(
+					$_REQUEST["ticketOptionDisplay"], //name
+					$_REQUEST["ticketOptionDisplayType"], //type
+					$_REQUEST["ticketOptionDrop"], //options
+					$_REQUEST["ticketOptionRequired"] ? true : false, //required
+					$_REQUEST["ticketOptionUnique"] ? true : false, //unique
+					$_REQUEST["ticketOptionFuzzyUnique"] ? true : false //fuzzy unique
+				);
 				$o["ticketOptions"][$nextId]->setOptionId($nextId);
 				update_option("eventTicketingSystem", $o);
+
+				//now update all packages that use this option
+				if (is_numeric($_REQUEST['update']))
+				{
+					global $wpdb;
+	        		$packages = $wpdb->get_results("select option_value from {$wpdb->options} where option_name like 'package_%'");
+	        		// echo "<pre>";var_dump($packages); die();
+	        		foreach ($packages as $packagehash => $_package)
+	        		{
+		        		$package = unserialize($_package->option_value);
+		        		// echo "<pre>";var_dump($package); die();
+	        			foreach ($package->tickets as $tickethash => $ticket)
+	        			{
+		        			if (isset($ticket->ticketOptions[$nextId]))
+		        			{
+								$ticket->ticketOptions[$nextId]->displayName	= $o['ticketOptions'][$nextId]->displayName;
+								$ticket->ticketOptions[$nextId]->displayType	= $o['ticketOptions'][$nextId]->displayType;
+								$ticket->ticketOptions[$nextId]->options		= $o['ticketOptions'][$nextId]->options;
+								$ticket->ticketOptions[$nextId]->required		= $o['ticketOptions'][$nextId]->required;
+								$ticket->ticketOptions[$nextId]->unique		    = $o['ticketOptions'][$nextId]->unique;
+								$ticket->ticketOptions[$nextId]->fuzzyUnique	= $o['ticketOptions'][$nextId]->fuzzyUnique;
+		        			}
+		        			$ticket->final = false;
+		        		}
+		        		update_option('package_' . $package->packageId, $package);
+		        	}
+		        }
+
 				echo '<div id="message" class="updated"><p>Option saved</p></div>';
 
 				$ticketOption = new ticketOption();
@@ -1449,7 +1488,13 @@ echo '</div>';
 			{
 				echo "<tr>";
 				echo '<td>' . $v->displayName . '</td>';
-				echo '<td><a href="#" onclick="javascript:document.ticketOptionAdd.update.value=\'\';document.ticketOptionAdd.del.value=\'\';document.ticketOptionAdd.edit.value=\'' . $v->optionId . '\';document.ticketOptionAdd.submit();return false;">Edit</a>&nbsp;|&nbsp;<a href="#" onclick="javascript:if (confirm(\'Are you sure you want to delete this option?\')) {document.ticketOptionAdd.update.value=\'\';document.ticketOptionAdd.edit.value=\'\';document.ticketOptionAdd.del.value=\'' . $v->optionId . '\';document.ticketOptionAdd.submit();return false;}">Delete</a></td>';
+				echo <<<EOT
+					<td>
+						<a href="#" onclick="javascript:document.ticketOptionAdd.update.value='';document.ticketOptionAdd.del.value='';document.ticketOptionAdd.edit.value='{$v->optionId}';document.ticketOptionAdd.submit();return false;">Edit</a>
+						&nbsp;|&nbsp;
+						<a href="#" onclick="javascript:if (confirm('Are you sure you want to delete this option?')) {document.ticketOptionAdd.update.value='';document.ticketOptionAdd.edit.value='';document.ticketOptionAdd.del.value='{$v->optionId}';document.ticketOptionAdd.submit();return false;}">Delete</a>
+					</td>
+EOT;
 			}
 
 			echo "</tr>";
@@ -1501,6 +1546,19 @@ echo '</div>';
 			<p class="submit"><input type="button" id="btnAdd" value="add another option value" />
 			<input type="button" id="btnDel" value="remove last option value" /></p>
 		</div></div>';
+		$isRequired = $ticketOption->required ? 'checked="checked"' : '';
+		$isUnique = $ticketOption->unique ? 'checked="checked"' : '';
+		$isFuzzyUnique = $ticketOption->fuzzyUnique ? 'checked="checked"' : '';
+		echo <<<EOT
+		<div id="inputTicketOption_Opts">
+			<input type="checkbox" name="ticketOptionRequired" value="1" {$isRequired} />
+				Required<br />
+			<input type="checkbox" name="ticketOptionUnique" value="1" {$isUnique} />
+				Unique<br />
+			<input type="checkbox" name="ticketOptionFuzzyUnique" value="1" {$isFuzzyUnique} />
+				Fuzzy Unique (Ignore case and nonword characters)<br />
+		</div>
+EOT;
 		if (isset($_REQUEST["edit"]) && is_numeric($_REQUEST["edit"]) && is_numeric($ticketOption->optionId))
 		{
 			echo '<div>
@@ -2253,17 +2311,23 @@ echo '</div>';
 				if ($packageCounter > 0 && $v->validDates() && $v->active !== false)
 				{
 					echo '<tr>';
-					echo '<td><div class="packagename"><strong>' . $v->packageName . '</strong></div><div class="packagedescription">' . $v->packageDescription . '</div></td>';
+					echo '<td><div class="packagename"><label for="packagePurchase_' . $v->packageId . '">' . $v->packageName . '</label></div><div class="packagedescription">' . $v->packageDescription . '</div></td>';
 					echo '<td>'. (is_numeric($v->price) ? eventTicketingSystem::currencyFormat($v->price) : eventTicketingSystem::currencyFormat(0)) . '</td>';
 					if ($o["displayPackageQuantity"])
 					{
 						echo '<td>' . $packageRemaining . ' left</td>';
 					}
-					echo '<td><button name="packagePurchase[' . $v->packageId . ']" value="1">Purchase</button></td>';
+					// echo '<td><select name="packagePurchase[' . $v->packageId . ']">';
+					// for ($i = 0; $i <= $packageCounter; $i++)
+					// {
+					// 	echo '<option>' . $i . '</option>';
+					// }
+					// echo '</select></td>';
+					echo '<td><input type="radio" name="packagePurchase" id="packagePurchase_' . $v->packageId . '" value="p' . $v->packageId . '" /></td>';
 					echo '</tr>';
 				}
 			}
-			//echo '<tr class="coupon"><td colspan="2"><label for="couponCode">Coupon Code:</label><input class="input" name="couponCode"></td><td colspan="' . ($o["displayPackageQuantity"] == 1 ? "2" : "1") . '"><input type="submit" name="couponSubmitButton" value="Apply Coupon"></td></tr>';
+			// echo '<tr class="coupon"><td colspan="2"><label for="couponCode">Coupon Code:</label><input class="input" name="couponCode"></td><td colspan="' . ($o["displayPackageQuantity"] == 1 ? "2" : "1") . '"><input type="submit" name="couponSubmitButton" value="Apply Coupon"></td></tr>';
 			echo '<tr class="paypalbutton"><td colspan="' . ($o["displayPackageQuantity"] == 1 ? "4" : "3") . '"><input type="image" src="https://www.paypal.com/en_US/i/btn/btn_xpressCheckout.gif"><div class="purchaseInstructions" >Choose your registration level and pay with PayPal. You will fill in your registration information after your purchase is completed.</div></td></tr>';
 			echo '</table>';
 			echo '</div>'; // id="packages"
@@ -2284,17 +2348,79 @@ echo '</div>';
 			$ticketHash = $_REQUEST["tickethash"];
 			$packageHash = $_REQUEST["packagehash"];
 			$package = get_option('package_' . $packageHash);
+			$errors = array();
+			// if (defined('WP_DEBUG') && WP_DEBUG)
+			// {
+			// 	echo '<pre>';
+			// 	var_dump(self::getAttendees());
+			// 	echo '</pre>';
+			// }
 			if ($package instanceof package)
 			{
 				foreach ($_REQUEST["ticketOption"] as $oid => $oval)
 				{
-					$package->tickets[$ticketHash]->ticketOptions[$oid]->value = $oval;
+					if (defined('WP_DEBUG') && WP_DEBUG)
+					{
+						echo "Processing ticket option {$package->tickets[$ticketHash]->ticketOptions[$oid]->displayName} : '{$oval}'<br />\n";
+						var_dump($package->tickets[$ticketHash]->ticketOptions[$oid]);
+					}
+					if ($package->tickets[$ticketHash]->ticketOptions[$oid]->required && !trim($oval))
+					{
+						$errors[] = "Option '{$package->tickets[$ticketHash]->ticketOptions[$oid]->displayName}' is required.";
+					}
+					elseif ($package->tickets[$ticketHash]->ticketOptions[$oid]->unique)
+					{
+						$testValue = $oval;
+						if ($package->tickets[$ticketHash]->ticketOptions[$oid]->fuzzyUnique)
+						{
+							$testValue = strtolower(preg_replace('#\W#', '', $testValue));
+						}
+
+						foreach (self::getAttendees() as $_package => $_tickets)
+						{
+							foreach ($_tickets as $_ticket)
+							{
+								if ($_ticket->ticketId == $ticketHash) continue;
+								$_value = $_ticket->ticketOptions[$oid]->value;
+								if ($package->tickets[$ticketHash]->ticketOptions[$oid]->fuzzyUnique)
+								{
+									$_value = strtolower(preg_replace('#\W#', '', $_value));
+								}
+								// if (defined('WP_DEBUG') && WP_DEBUG)
+								// {
+								// 	echo "Processing {$package->tickets[$ticketHash]->ticketOptions[$oid]}, comparing old {$_value} to new {$testValue}<br />\n";
+								// }
+								if ($_value == $testValue)
+								{
+									$errors[] = "'{$package->tickets[$ticketHash]->ticketOptions[$oid]->displayName}' must be unique - please choose a different value.";
+									break;
+								}
+							}
+						}
+					}
+					if (count($errors) == 0)
+					{
+						$package->tickets[$ticketHash]->ticketOptions[$oid]->value = $oval;
+					}
 				}
+			}
+			else
+			{
+				$errors[] = "Internal error.";
+			}
+
+			if (count($errors) == 0)
+			{
 				//echo '<pre>'.print_r($package->tickets,true).'</pre>';
 				$package->tickets[$ticketHash]->final = true;
 				update_option('package_' . $packageHash, $package);
 
 				echo '<div id="message" class="updated">Your registration has been saved</div>';
+			}
+			else
+			{
+				echo '<div class="ticketingerror">' . implode("<br />", $errors) . '</div>';
+				echo '<a href="#" onclick="javascript:window.location=window.location; return false;">Go Back</a>';
 			}
 		}
 		else
@@ -2396,27 +2522,39 @@ echo '</div>';
             }
 				
 			$somethingpurchased = $total = 0;
+			// foreach ($_REQUEST["packagePurchase"] as $packageId => $quantity)
+			// {
+			// 	if ($quantity > 0)
+			// 	{
+			// 		$somethingpurchased = 1;
+			// 		$total += $o["packageProtos"][$packageId]->price * $quantity;
+			// 		$item[] = array("quantity" => $quantity,
+			// 		                "name" => $o["packageProtos"][$packageId]->displayName(),
+			// 		                "desc" => $o["packageProtos"][$packageId]->packageDescription,
+			// 		                "price" => $o["packageProtos"][$packageId]->price,
+			// 		                "packageid" => $packageId
+			// 		);
+			// 	}
+			// }
 			if (isset($_REQUEST["packagePurchase"]) && $_REQUEST["packagePurchase"])
 			{
-				$packageId = $_REQUEST["packagePurchase"];
-				if (isset($o["packageProtos"][$packageId]))
-				{
-					$somethingpurchased = 1;
-					$total += $o["packageProtos"][$packageId]->price * $quantity;
-					$item[] = array("quantity" => $quantity,
-					                "name" => $o["packageProtos"][$packageId]->displayName(),
-					                "desc" => $o["packageProtos"][$packageId]->packageDescription,
-					                "price" => $o["packageProtos"][$packageId]->price,
-					                "packageid" => $packageId
-					);
-				}
+				$packageId = substr($_REQUEST["packagePurchase"], 1);
+				$somethingpurchased = 1;
+				$quantity = 1;
+				$total += $o["packageProtos"][$packageId]->price * $quantity;
+				$item[] = array("quantity" => $quantity,
+				                "name" => $o["packageProtos"][$packageId]->displayName(),
+				                "desc" => $o["packageProtos"][$packageId]->packageDescription,
+				                "price" => $o["packageProtos"][$packageId]->price,
+				                "packageid" => $packageId
+				);
 			}
             
 
 			//was something purchased?
 			if ($somethingpurchased == 0)
 			{
-				$_SESSION["ticketingError"] = 'You did not choose a package.  Please choose a package.';
+				$_SESSION["ticketingError"] = 'You did not choose a package. Please choose a package.';
 			}
 			else
 			{
@@ -2539,15 +2677,19 @@ class ticketOption
 	public $displayType;
 	public $options;
 	public $required;
+	public $unique;
+	public $fuzzyUnique;
 	public $value;
 	public $optionId;
 
-	function __construct($display = NULL, $displayType = NULL, $options = NULL, $required = true)
+	function __construct($display = NULL, $displayType = NULL, $options = NULL, $required = true, $unique = false, $fuzzyUnique = false)
 	{
 		$this->displayName = $display;
 		$this->displayType = $displayType;
 		$this->options = $options;
 		$this->required = $required;
+		$this->unique = $unique;
+		$this->fuzzyUnique = $fuzzyUnique;
 	}
 
 	public function displayForm()
