@@ -1442,7 +1442,7 @@ echo '</div>';
 	        		foreach ($packages as $packagehash => $_package)
 	        		{
 		        		$package = unserialize($_package->option_value);
-		        		echo "<pre>";var_dump($package); die();
+		        		// echo "<pre>";var_dump($package); die();
 	        			foreach ($package->tickets as $tickethash => $ticket)
 	        			{
 		        			if (isset($ticket->ticketOptions[$nextId]))
@@ -1451,12 +1451,12 @@ echo '</div>';
 								$ticket->ticketOptions[$nextId]->displayType	= $o['ticketOptions'][$nextId]->displayType;
 								$ticket->ticketOptions[$nextId]->options		= $o['ticketOptions'][$nextId]->options;
 								$ticket->ticketOptions[$nextId]->required		= $o['ticketOptions'][$nextId]->required;
-								$ticket->ticketOptions[$nextId]->unique		= $o['ticketOptions'][$nextId]->unique;
+								$ticket->ticketOptions[$nextId]->unique		    = $o['ticketOptions'][$nextId]->unique;
 								$ticket->ticketOptions[$nextId]->fuzzyUnique	= $o['ticketOptions'][$nextId]->fuzzyUnique;
 		        			}
 		        			$ticket->final = false;
 		        		}
-		        		update_option('package_' . $packagehash, $package);
+		        		update_option('package_' . $package->packageId, $package);
 		        	}
 		        }
 
