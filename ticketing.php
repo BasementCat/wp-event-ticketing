@@ -2323,7 +2323,9 @@ EOT;
 			$errors = array();
 			if (defined('WP_DEBUG') && WP_DEBUG)
 			{
+				echo '<pre>';
 				var_dump(self::getAttendees());
+				echo '</pre>';
 			}
 			if ($package instanceof package)
 			{
@@ -2347,22 +2349,25 @@ EOT;
 							$testValue = strtolower(preg_replace('#\W#', '', $testValue));
 						}
 
-						foreach ($package->tickets as $_hash => $_ticket)
+						foreach (self::getAttendees() as $package => $tickets)
 						{
-							if ($_hash == $ticketHash) continue;
-							$_value = $_ticket->ticketOptions[$oid]->value;
-							if ($ticket->ticketOptions[$oid]->fuzzyUnique)
+							foreach ($tickets as $_ticket)
 							{
-								$_value = strtolower(preg_replace('#\W#', '', $_value));
-							}
-							if (defined('WP_DEBUG') && WP_DEBUG)
-							{
-								echo "Processing {$ticket->ticketOptions[$oid]}, comparing old {$_value} to new {$testValue}<br />\n";
-							}
-							if ($_value == $testValue)
-							{
-								$errors[] = "'{$ticket->ticketOptions[$oid]->displayName}' must be unique - please choose a different value.";
-								break;
+								if ($_ticket->ticketId == $ticketHash) continue;
+								$_value = $_ticket->ticketOptions[$oid]->value;
+								if ($ticket->ticketOptions[$oid]->fuzzyUnique)
+								{
+									$_value = strtolower(preg_replace('#\W#', '', $_value));
+								}
+								if (defined('WP_DEBUG') && WP_DEBUG)
+								{
+									echo "Processing {$ticket->ticketOptions[$oid]}, comparing old {$_value} to new {$testValue}<br />\n";
+								}
+								if ($_value == $testValue)
+								{
+									$errors[] = "'{$ticket->ticketOptions[$oid]->displayName}' must be unique - please choose a different value.";
+									break;
+								}
 							}
 						}
 					}
