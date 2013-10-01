@@ -1441,6 +1441,7 @@ echo '</div>';
 	        		foreach ($packages as $packagehash => $package)
 	        		{
 		        		$package = unserialize($package);
+		        		echo "<pre>";var_dump($package); die();
 	        			foreach ($package->tickets as $tickethash => $ticket)
 	        			{
 		        			if (isset($ticket->ticketOptions[$nextId]))
