@@ -1438,6 +1438,7 @@ echo '</div>';
 				{
 					global $wpdb;
 	        		$packages = $wpdb->get_results("select option_value from {$wpdb->options} where option_name like 'package_%'");
+	        		echo "<pre>";var_dump($packages); die();
 	        		foreach ($packages as $packagehash => $package)
 	        		{
 		        		$package = unserialize($package);
