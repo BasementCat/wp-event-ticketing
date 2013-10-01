@@ -2321,12 +2321,12 @@ EOT;
 			$packageHash = $_REQUEST["packagehash"];
 			$package = get_option('package_' . $packageHash);
 			$errors = array();
-			if (defined('WP_DEBUG') && WP_DEBUG)
-			{
-				echo '<pre>';
-				var_dump(self::getAttendees());
-				echo '</pre>';
-			}
+			// if (defined('WP_DEBUG') && WP_DEBUG)
+			// {
+			// 	echo '<pre>';
+			// 	var_dump(self::getAttendees());
+			// 	echo '</pre>';
+			// }
 			if ($package instanceof package)
 			{
 				$ticket = $package->tickets[$ticketHash];
@@ -2359,10 +2359,10 @@ EOT;
 								{
 									$_value = strtolower(preg_replace('#\W#', '', $_value));
 								}
-								if (defined('WP_DEBUG') && WP_DEBUG)
-								{
-									echo "Processing {$ticket->ticketOptions[$oid]}, comparing old {$_value} to new {$testValue}<br />\n";
-								}
+								// if (defined('WP_DEBUG') && WP_DEBUG)
+								// {
+								// 	echo "Processing {$ticket->ticketOptions[$oid]}, comparing old {$_value} to new {$testValue}<br />\n";
+								// }
 								if ($_value == $testValue)
 								{
 									$errors[] = "'{$ticket->ticketOptions[$oid]->displayName}' must be unique - please choose a different value.";
