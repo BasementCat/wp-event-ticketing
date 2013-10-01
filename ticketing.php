@@ -2348,9 +2348,9 @@ EOT;
 							$testValue = strtolower(preg_replace('#\W#', '', $testValue));
 						}
 
-						foreach (self::getAttendees() as $package => $tickets)
+						foreach (self::getAttendees() as $_package => $_tickets)
 						{
-							foreach ($tickets as $_ticket)
+							foreach ($_tickets as $_ticket)
 							{
 								if ($_ticket->ticketId == $ticketHash) continue;
 								$_value = $_ticket->ticketOptions[$oid]->value;
@@ -2385,7 +2385,6 @@ EOT;
 			{
 				//echo '<pre>'.print_r($package->tickets,true).'</pre>';
 				$package->tickets[$ticketHash]->final = true;
-				var_dump($package); die();
 				update_option('package_' . $packageHash, $package);
 
 				echo '<div id="message" class="updated">Your registration has been saved</div>';
