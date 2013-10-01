@@ -2385,13 +2385,14 @@ EOT;
 			{
 				//echo '<pre>'.print_r($package->tickets,true).'</pre>';
 				$package->tickets[$ticketHash]->final = true;
+				var_dump($package); die();
 				update_option('package_' . $packageHash, $package);
 
 				echo '<div id="message" class="updated">Your registration has been saved</div>';
 			}
 			else
 			{
-				echo '<div id="error" class="updated">' . implode("<br />", $errors) . '</div>';
+				echo '<div class="ticketingerror">' . implode("<br />", $errors) . '</div>';
 				echo '<a href="#" onclick="javascript:window.location=window.location; return false;">Go Back</a>';
 			}
 		}
