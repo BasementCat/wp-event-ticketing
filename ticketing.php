@@ -2393,6 +2393,7 @@ EOT;
 			else
 			{
 				echo '<div id="error" class="updated">' . implode("<br />", $errors) . '</div>';
+				echo '<a href="#" onclick="javascript:window.location=window.location; return false;">Go Back</a>';
 			}
 		}
 		else
