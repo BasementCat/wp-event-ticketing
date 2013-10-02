@@ -1434,7 +1434,11 @@ echo '</div>';
 				);
 				if (defined('WP_DEBUG') && WP_DEBUG)
 				{
+					echo "<pre>POSTDATA:\n";
+					var_dump($_REQUEST);
+					echo "\nOPT:\n";
 					var_dump($o['ticketOptions'][$nextId]);
+					echo "</pre>";
 				}
 				$o["ticketOptions"][$nextId]->setOptionId($nextId);
 				update_option("eventTicketingSystem", $o);
