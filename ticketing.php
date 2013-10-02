@@ -1432,6 +1432,10 @@ echo '</div>';
 					$_REQUEST["ticketOptionLengthLimit"],
 					$_REQUEST["ticketOptionFilter"]
 				);
+				if (defined('WP_DEBUG') && WP_DEBUG)
+				{
+					var_dump($o['ticketOptions'][$nextId]);
+				}
 				$o["ticketOptions"][$nextId]->setOptionId($nextId);
 				update_option("eventTicketingSystem", $o);
 
