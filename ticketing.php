@@ -1428,8 +1428,18 @@ echo '</div>';
 					$_REQUEST["ticketOptionDrop"], //options
 					$_REQUEST["ticketOptionRequired"] ? true : false, //required
 					$_REQUEST["ticketOptionUnique"] ? true : false, //unique
-					$_REQUEST["ticketOptionFuzzyUnique"] ? true : false //fuzzy unique
+					$_REQUEST["ticketOptionFuzzyUnique"] ? true : false, //fuzzy unique
+					$_REQUEST["ticketOptionLengthLimit"],
+					$_REQUEST["ticketOptionFilter"]
 				);
+				if (defined('WP_DEBUG') && WP_DEBUG)
+				{
+					echo "<pre>POSTDATA:\n";
+					var_dump($_REQUEST);
+					echo "\nOPT:\n";
+					var_dump($o['ticketOptions'][$nextId]);
+					echo "</pre>";
+				}
 				$o["ticketOptions"][$nextId]->setOptionId($nextId);
 				update_option("eventTicketingSystem", $o);
 
@@ -1453,6 +1463,8 @@ echo '</div>';
 								$ticket->ticketOptions[$nextId]->required		= $o['ticketOptions'][$nextId]->required;
 								$ticket->ticketOptions[$nextId]->unique		    = $o['ticketOptions'][$nextId]->unique;
 								$ticket->ticketOptions[$nextId]->fuzzyUnique	= $o['ticketOptions'][$nextId]->fuzzyUnique;
+								$ticket->ticketOptions[$nextId]->lengthLimit	= $o['ticketOptions'][$nextId]->lengthLimit;
+								$ticket->ticketOptions[$nextId]->filter		 	= $o['ticketOptions'][$nextId]->filter;
 		        			}
 		        			$ticket->final = false;
 		        		}
@@ -1557,6 +1569,10 @@ EOT;
 				Unique<br />
 			<input type="checkbox" name="ticketOptionFuzzyUnique" value="1" {$isFuzzyUnique} />
 				Fuzzy Unique (Ignore case and nonword characters)<br />
+			<input type="text" name="ticketOptionLengthLimit" value="{$ticketOption->lengthLimit}" />
+				Length limit (blank or 0 to disable)<br />
+			<input type="text" name="ticketOptionFilter" value="{$ticketOption->filter}" />
+				Filter (regular expression that input must match, INCLUDE DELIMITERS)<br />
 		</div>
 EOT;
 		if (isset($_REQUEST["edit"]) && is_numeric($_REQUEST["edit"]) && is_numeric($ticketOption->optionId))
@@ -2368,33 +2384,52 @@ EOT;
 					{
 						$errors[] = "Option '{$package->tickets[$ticketHash]->ticketOptions[$oid]->displayName}' is required.";
 					}
-					elseif ($package->tickets[$ticketHash]->ticketOptions[$oid]->unique)
+					else
 					{
-						$testValue = $oval;
-						if ($package->tickets[$ticketHash]->ticketOptions[$oid]->fuzzyUnique)
+						if ($package->tickets[$ticketHash]->ticketOptions[$oid]->unique)
 						{
-							$testValue = strtolower(preg_replace('#\W#', '', $testValue));
-						}
-
-						foreach (self::getAttendees() as $_package => $_tickets)
-						{
-							foreach ($_tickets as $_ticket)
+							$testValue = $oval;
+							if ($package->tickets[$ticketHash]->ticketOptions[$oid]->fuzzyUnique)
 							{
-								if ($_ticket->ticketId == $ticketHash) continue;
-								$_value = $_ticket->ticketOptions[$oid]->value;
-								if ($package->tickets[$ticketHash]->ticketOptions[$oid]->fuzzyUnique)
+								$testValue = strtolower(preg_replace('#\W#', '', $testValue));
+							}
+
+							foreach (self::getAttendees() as $_package => $_tickets)
+							{
+								foreach ($_tickets as $_ticket)
 								{
-									$_value = strtolower(preg_replace('#\W#', '', $_value));
+									if ($_ticket->ticketId == $ticketHash) continue;
+									$_value = $_ticket->ticketOptions[$oid]->value;
+									if ($package->tickets[$ticketHash]->ticketOptions[$oid]->fuzzyUnique)
+									{
+										$_value = strtolower(preg_replace('#\W#', '', $_value));
+									}
+									// if (defined('WP_DEBUG') && WP_DEBUG)
+									// {
+									// 	echo "Processing {$package->tickets[$ticketHash]->ticketOptions[$oid]}, comparing old {$_value} to new {$testValue}<br />\n";
+									// }
+									if ($_value == $testValue)
+									{
+										$errors[] = "'{$package->tickets[$ticketHash]->ticketOptions[$oid]->displayName}' must be unique - please choose a different value.";
+										break;
+									}
 								}
-								// if (defined('WP_DEBUG') && WP_DEBUG)
-								// {
-								// 	echo "Processing {$package->tickets[$ticketHash]->ticketOptions[$oid]}, comparing old {$_value} to new {$testValue}<br />\n";
-								// }
-								if ($_value == $testValue)
-								{
-									$errors[] = "'{$package->tickets[$ticketHash]->ticketOptions[$oid]->displayName}' must be unique - please choose a different value.";
-									break;
-								}
+							}
+						}
+						if ($package->tickets[$ticketHash]->ticketOptions[$oid]->lengthLimit)
+						{
+							if (strlen($oval) > $package->tickets[$ticketHash]->ticketOptions[$oid]->lengthLimit)
+							{
+								$errors[] = "'{$package->tickets[$ticketHash]->ticketOptions[$oid]->displayName}' cannot be longer than {$package->tickets[$ticketHash]->ticketOptions[$oid]->lengthLimit} letters.";
+								break;
+							}
+						}
+						if ($package->tickets[$ticketHash]->ticketOptions[$oid]->filter)
+						{
+							if (!preg_match($package->tickets[$ticketHash]->ticketOptions[$oid]->filter, $oval))
+							{
+								$errors[] = "'{$package->tickets[$ticketHash]->ticketOptions[$oid]->displayName}' contains invalid characters.";
+								break;
 							}
 						}
 					}
@@ -2679,10 +2714,12 @@ class ticketOption
 	public $required;
 	public $unique;
 	public $fuzzyUnique;
+	public $lengthLimit;
+	public $filter;
 	public $value;
 	public $optionId;
 
-	function __construct($display = NULL, $displayType = NULL, $options = NULL, $required = true, $unique = false, $fuzzyUnique = false)
+	function __construct($display = NULL, $displayType = NULL, $options = NULL, $required = true, $unique = false, $fuzzyUnique = false, $lengthLimit = null, $filter = null)
 	{
 		$this->displayName = $display;
 		$this->displayType = $displayType;
@@ -2690,6 +2727,8 @@ class ticketOption
 		$this->required = $required;
 		$this->unique = $unique;
 		$this->fuzzyUnique = $fuzzyUnique;
+		$this->lengthLimit = $lengthLimit;
+		$this->filter = $filter;
 	}
 
 	public function displayForm()
