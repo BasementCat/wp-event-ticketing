@@ -2728,7 +2728,7 @@ class ticketOption
 		$this->unique = $unique;
 		$this->fuzzyUnique = $fuzzyUnique;
 		$this->lengthLimit = $lengthLimit;
-		$htis->filter = $filter;
+		$this->filter = $filter;
 	}
 
 	public function displayForm()
