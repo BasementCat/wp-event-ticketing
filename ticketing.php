@@ -2325,7 +2325,7 @@ EOT;
 			if (get_option("eventTicketingSystem_require_terms"))
 			{
 				echo '<li><input type="checkbox" value="1" name="checked_terms_and_conditions" id="checked_terms_and_conditions" />&nbsp;';
-				echo '<label for="checked_terms_and_conditions">' . get_option("eventTicketingSystem_terms_text") . "</label></li>";
+				echo '<label for="checked_terms_and_conditions" class="right">' . get_option("eventTicketingSystem_terms_text") . "</label></li>";
 			}
 			echo '</ul>';
 			echo '<div id="packages">';
