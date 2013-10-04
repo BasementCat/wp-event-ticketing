@@ -33,7 +33,10 @@ class eventTicketingSystem
 			$data = unserialize(file_get_contents(WP_PLUGIN_DIR . '/' . plugin_basename(dirname(__FILE__)) . '/defaults.ser'));
 			add_option("eventTicketingSystem", $data);
 		}
-		
+
+		add_option("eventTicketingSystem_require_terms", false);
+		add_option("eventTicketingSystem_terms_text", "");
+
 		//If in an MS context and there's a new blog created switch back to current blog after defaults are loaded
 		if(is_numeric($blog_id))
 		{
@@ -463,6 +466,31 @@ class eventTicketingSystem
 		echo '<tr valign="top">
 				<th scope="row"><label for="displayTotals">Display Totals in Form</th>
 				<td><input type="checkbox" value="1" name="displayPackageQuantity" ' . ($o["displayPackageQuantity"] == 1 ? "checked" : "") . '></td></tr>';
+		echo '<tr><td colspan="2"><input type="submit" class="button-primary" name="submitbutton" value="Save Settings" /></td></tr></table>';
+		echo '</div>';
+
+		/*
+		 * Terms display
+		 */
+		echo '<div class="settings_page">';
+		echo '<div id="icon-users" class="icon32"></div><h2>Terms and Conditions</h2>';
+		//echo '<form method="post" action="" name="eventAttendance">
+		echo '<input type="hidden" name="eventTermsNonce" id="eventTermsNonce" value="' . wp_create_nonce(plugin_basename(__FILE__)) . '" />';
+		//<input type="hidden" name="edit" value="" />';
+		if (isset($_POST['eventTermsNonce']) && wp_verify_nonce($_POST['eventTermsNonce'], plugin_basename(__FILE__)))
+		{
+			update_option("eventTicketingSystem_require_terms", $_REQUEST["eventTicketingSystem_require_terms"] ? true : false);
+			update_option("eventTicketingSystem_terms_text", $_REQUEST["eventTicketingSystem_terms_text"]);
+		}
+		
+		echo '<div id="ticket_terms_edit">';
+		echo '<table class="form-table">';
+		echo '<tr valign="top">
+				<th scope="row"><label for="eventTicketingSystem_require_terms">Require users to agree to terms</th>
+				<td><input type="checkbox" value="1" name="eventTicketingSystem_require_terms" ' . (get_option("eventTicketingSystem_require_terms") ? "checked" : "") . '></td></tr>';
+		echo '<tr valign="top">
+				<th scope="row"><label for="eventTicketingSystem_terms_text">Terms and Conditions checkbox label</label></th>
+				<td><input type="text" value="' . get_option("eventTicketingSystem_terms_text") . '" name="eventTicketingSystem_terms_text" /></td></tr>';
 		echo '<tr><td colspan="2"><input type="submit" class="button-primary" name="submitbutton" value="Save Settings" /></td></tr></table>';
 		echo '</div>';
 
@@ -2288,10 +2316,18 @@ EOT;
 					$o["packageProtos"][$transient->packageId] = $transient;
 				}
 			}
-			echo '<form action="" method="post">';
+			echo '<form action="" method="post" id="ticket_purchase">';
 			echo '<input type="hidden" name="packagePurchaseNonce" id="packagePurchaseNonce" value="' . wp_create_nonce(plugin_basename(__FILE__)) . '" />';
 			echo '<div>Please enter your full legal name and contact email address for your registration.</div>';
-			echo '<ul class="ticketPurchaseInfo"><li><label for="packagePurchaseName">Full Name:</label><input name="packagePurchaseName" size="35" value="' . $_REQUEST["packagePurchaseName"] . '"></li><li><label for="packagePurchaseEmail">Email:</label><input name="packagePurchaseEmail" size="35" value="' . $_REQUEST["packagePurchaseEmail"] . '"></li></ul>';
+			echo '<ul class="ticketPurchaseInfo">';
+			echo '<li><label for="packagePurchaseName">Full Name:</label><input name="packagePurchaseName" size="35" value="' . $_REQUEST["packagePurchaseName"] . '"></li>';
+			echo '<li><label for="packagePurchaseEmail">Email:</label><input name="packagePurchaseEmail" size="35" value="' . $_REQUEST["packagePurchaseEmail"] . '"></li>';
+			if (get_option("eventTicketingSystem_require_terms"))
+			{
+				echo '<li><input type="checkbox" value="1" name="checked_terms_and_conditions" id="checked_terms_and_conditions" />&nbsp;';
+				echo '<label for="checked_terms_and_conditions" class="right">' . get_option("eventTicketingSystem_terms_text") . "</label></li>";
+			}
+			echo '</ul>';
 			echo '<div id="packages">';
 			echo '<table>';
 			echo '<tr>';
@@ -2301,7 +2337,7 @@ EOT;
 			{
 				echo '<th>Remaining</th>';
 			}
-			echo '<th>Quantity</th>';
+			echo '<th>Choice</th>';
 			echo '</tr>';
 			foreach ($o["packageProtos"] as $k => $v)
 			{
@@ -2468,6 +2504,7 @@ EOT;
 			if ($package instanceof package)
 			{
 				$ticket = $package->tickets[$ticketHash];
+				$hasRequired = false;
 
 				//echo '<pre>'.print_r($ticket,true).'</pre>';
 				echo '<form name="ticketInformation" method="post" action="">';
@@ -2477,11 +2514,18 @@ EOT;
 				echo '<input type="hidden" name ="packagehash" value="' . $packageHash . '" />';
 				foreach ($ticket->ticketOptions as $option)
 				{
-					echo '<tr><td>' . $option->displayName . ':</td><td>' . $option->displayForm() . '</tr>';
+					echo '<tr><td>';
+					if ($option->required)
+					{
+						$hasRequired = true;
+						echo '<strong>*</strong> ';
+					}
+					echo $option->displayName . ':</td><td>' . $option->displayForm() . '</tr>';
 				}
 				echo '<tr><td colspan="2"><input type="submit" class="button-primary" name="submitbutt" value="Save Registration"></td></tr>';
 				echo '</table>';
 				echo '</form>';
+				echo '<em>Fields marked with * are required</em><br />';
 			}
 			else
 			{
@@ -2498,10 +2542,15 @@ EOT;
 		if (isset($_POST['packagePurchaseNonce']) && wp_verify_nonce($_POST['packagePurchaseNonce'], plugin_basename(__FILE__)))
 		{
 
-			if (!check_email_address($_REQUEST["packagePurchaseEmail"]))
+			if (!check_email_address($_REQUEST["packagePurchaseEmail"]) || !trim($_REQUEST['packagePurchaseName']))
 			{
 				$_SESSION["ticketingError"] = 'Please enter a name and email address';
 				return (false);
+			}
+			if (get_option("eventTicketingSystem_require_terms") && !$_REQUEST['checked_terms_and_conditions'])
+			{
+				$_SESSION["ticketingError"] = "You cannot continue your purchase until you agree to the terms and conditions";
+				return false;
 			}
 			if (strlen($_REQUEST["couponSubmitButton"]))
 			{

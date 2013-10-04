@@ -23,7 +23,10 @@
   width: 6.5em;
   text-align: right;
 }
-#eventTicketing ul.ticketPurchaseInfo li input {
+#eventTicketing ul.ticketPurchaseInfo li label.right {
+  width: auto;
+}
+#eventTicketing ul.ticketPurchaseInfo li input [type=text] {
   width: 16em;
 }
 
