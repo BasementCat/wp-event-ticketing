@@ -2337,7 +2337,7 @@ EOT;
 			{
 				echo '<th>Remaining</th>';
 			}
-			echo '<th>Quantity</th>';
+			echo '<th>Choice</th>';
 			echo '</tr>';
 			foreach ($o["packageProtos"] as $k => $v)
 			{
