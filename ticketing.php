@@ -2513,7 +2513,12 @@ EOT;
 				echo '<input type="hidden" name ="packagehash" value="' . $packageHash . '" />';
 				foreach ($ticket->ticketOptions as $option)
 				{
-					echo '<tr><td>' . $option->displayName . ':</td><td>' . $option->displayForm() . '</tr>';
+					echo '<tr><td>';
+					if ($option->required)
+					{
+						echo '<strong>*</strong> ';
+					}
+					echo $option->displayName . ':</td><td>' . $option->displayForm() . '</tr>';
 				}
 				echo '<tr><td colspan="2"><input type="submit" class="button-primary" name="submitbutt" value="Save Registration"></td></tr>';
 				echo '</table>';
