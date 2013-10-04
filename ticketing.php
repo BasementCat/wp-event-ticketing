@@ -490,7 +490,7 @@ class eventTicketingSystem
 				<td><input type="checkbox" value="1" name="eventTicketingSystem_require_terms" ' . (get_option("eventTicketingSystem_require_terms") ? "checked" : "") . '></td></tr>';
 		echo '<tr valign="top">
 				<th scope="row"><label for="eventTicketingSystem_terms_text">Terms and Conditions checkbox label</label></th>
-				<td><input type="text" value="' . get_option("eventTicketingSystem_terms_text") . '" name="eventTicketingSystem_terms_text" size="4" /></td></tr>';
+				<td><input type="text" value="' . get_option("eventTicketingSystem_terms_text") . '" name="eventTicketingSystem_terms_text" /></td></tr>';
 		echo '<tr><td colspan="2"><input type="submit" class="button-primary" name="submitbutton" value="Save Settings" /></td></tr></table>';
 		echo '</div>';
 
