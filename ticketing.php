@@ -2504,6 +2504,7 @@ EOT;
 			if ($package instanceof package)
 			{
 				$ticket = $package->tickets[$ticketHash];
+				$hasRequired = false;
 
 				//echo '<pre>'.print_r($ticket,true).'</pre>';
 				echo '<form name="ticketInformation" method="post" action="">';
@@ -2516,6 +2517,7 @@ EOT;
 					echo '<tr><td>';
 					if ($option->required)
 					{
+						$hasRequired = true;
 						echo '<strong>*</strong> ';
 					}
 					echo $option->displayName . ':</td><td>' . $option->displayForm() . '</tr>';
@@ -2523,6 +2525,7 @@ EOT;
 				echo '<tr><td colspan="2"><input type="submit" class="button-primary" name="submitbutt" value="Save Registration"></td></tr>';
 				echo '</table>';
 				echo '</form>';
+				echo '<em>Fields marked with * are required</em><br />';
 			}
 			else
 			{
